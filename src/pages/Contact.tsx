@@ -1,41 +1,88 @@
-"use client"
-
 import type React from "react"
 
-import { useState, type FormEvent } from "react"
-import { Mail, Phone, MapPin, Send } from "lucide-react"
+import { useState, type FormEvent, useRef } from "react"
+import { Mail, Phone, MapPin, Send, CheckCircle, AlertCircle } from "lucide-react"
+import emailjs from "@emailjs/browser"
+
+// Define types for form data and status
+type FormData = {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
+
+type FormStatus = "idle" | "submitting" | "success" | "error"
 
 const Contact = () => {
-  const [formData, setFormData] = useState({
+  const formRef = useRef<HTMLFormElement>(null)
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     subject: "",
     message: "",
   })
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState("")
+  const [formStatus, setFormStatus] = useState<FormStatus>("idle")
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
+  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  // Handle form submission
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
 
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setSubmitMessage("Your message has been sent successfully!")
-      setFormData({ name: "", email: "", subject: "", message: "" })
+    try {
+      setFormStatus("submitting")
 
-      // Clear success message after 5 seconds
+      // Get EmailJS credentials from environment variables
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+      // Validate credentials
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error("EmailJS credentials are missing. Please check your environment variables.")
+      }
+
+      // Send email using EmailJS
+      const result = await emailjs.sendForm(serviceId, templateId, formRef.current!, publicKey)
+
+      console.log("Email sent successfully:", result.text)
+      setFormStatus("success")
+
+      // Reset form after successful submission
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      })
+
+      // Reset status after 5 seconds
       setTimeout(() => {
-        setSubmitMessage("")
+        setFormStatus("idle")
       }, 5000)
-    }, 1500)
+    } catch (error) {
+      console.error("Failed to send email:", error)
+      setFormStatus("error")
+
+      if (error instanceof Error) {
+        setErrorMessage(error.message)
+      } else {
+        setErrorMessage("An unknown error occurred")
+      }
+
+      // Reset error status after 5 seconds
+      setTimeout(() => {
+        setFormStatus("idle")
+        setErrorMessage("")
+      }, 5000)
+    }
   }
 
   return (
@@ -63,7 +110,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="text-sm text-gray-400">Email</h3>
-                  <p>saurabh91798@gmail.com</p>
+                  <p>harwin.dan@example.com</p>
                 </div>
               </div>
 
@@ -73,7 +120,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="text-sm text-gray-400">Phone</h3>
-                  <p>+91-9770603366</p>
+                  <p>+1 (555) 123-4567</p>
                 </div>
               </div>
 
@@ -83,7 +130,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="text-sm text-gray-400">Location</h3>
-                  <p>Bengaluru, Karnataka, India</p>
+                  <p>San Francisco, CA</p>
                 </div>
               </div>
             </div>
@@ -92,8 +139,7 @@ const Contact = () => {
               <h3 className="text-xl font-semibold mb-3">Connect With Me</h3>
               <div className="flex space-x-4">
                 <a
-                  href="https://github.com/saurabh91798"
-                  target="_blank"
+                  href="#"
                   className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center hover:bg-[#ff7b72] transition-colors"
                 >
                   <svg
@@ -107,8 +153,7 @@ const Contact = () => {
                   </svg>
                 </a>
                 <a
-                  href="https://www.linkedin.com/in/ksaurabhrao/"
-                  target="_blank"
+                  href="#"
                   className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center hover:bg-[#ff7b72] transition-colors"
                 >
                   <svg
@@ -143,13 +188,23 @@ const Contact = () => {
           <div className="bg-[#2a2a2a] p-6 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Send Me a Message</h2>
 
-            {submitMessage && (
-              <div className="mb-4 p-3 bg-green-900/30 border border-green-500 text-green-300 rounded">
-                {submitMessage}
+            {/* Status Messages */}
+            {formStatus === "success" && (
+              <div className="mb-4 p-3 bg-green-900/30 border border-green-500 text-green-300 rounded flex items-center">
+                <CheckCircle className="mr-2" size={18} />
+                Your message has been sent successfully!
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {formStatus === "error" && (
+              <div className="mb-4 p-3 bg-red-900/30 border border-red-500 text-red-300 rounded flex items-center">
+                <AlertCircle className="mr-2" size={18} />
+                {errorMessage || "Failed to send message. Please try again."}
+              </div>
+            )}
+
+            {/* Form */}
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm text-gray-400 mb-1">
                   Name
@@ -162,6 +217,7 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   className="w-full p-2 bg-[#1e1e1e] border border-gray-700 rounded focus:outline-none focus:border-[#ff7b72]"
+                  disabled={formStatus === "submitting"}
                 />
               </div>
 
@@ -177,6 +233,9 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   className="w-full p-2 bg-[#1e1e1e] border border-gray-700 rounded focus:outline-none focus:border-[#ff7b72]"
+                  disabled={formStatus === "submitting"}
+                  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                  title="Please enter a valid email address"
                 />
               </div>
 
@@ -192,6 +251,7 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   className="w-full p-2 bg-[#1e1e1e] border border-gray-700 rounded focus:outline-none focus:border-[#ff7b72]"
+                  disabled={formStatus === "submitting"}
                 />
               </div>
 
@@ -207,15 +267,16 @@ const Contact = () => {
                   required
                   rows={4}
                   className="w-full p-2 bg-[#1e1e1e] border border-gray-700 rounded focus:outline-none focus:border-[#ff7b72]"
+                  disabled={formStatus === "submitting"}
                 ></textarea>
               </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={formStatus === "submitting"}
                 className="w-full py-2 px-4 bg-[#ff7b72] text-white rounded flex items-center justify-center hover:bg-[#ff6b62] transition-colors disabled:opacity-70"
               >
-                {isSubmitting ? (
+                {formStatus === "submitting" ? (
                   <span className="flex items-center">
                     <svg
                       className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
