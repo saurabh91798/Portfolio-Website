@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
-import { ArrowRight, Code, Database, Globe, Server, Zap } from "lucide-react"
+import { ArrowRight, Code, Database, Globe, Server, CodeXml } from "lucide-react"
 
 const Home = () => {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -135,11 +135,11 @@ const Home = () => {
                 },
                 {
                   icon: (
-                    <div className="text-red-400">
-                      <Zap size={20} />
+                    <div className="text-yellow-400">
+                      <CodeXml size={20} />
                     </div>
                   ),
-                  name: "Solidity",
+                  name: "JavaScript",
                 },
               ].map((tech, index) => (
                 <div

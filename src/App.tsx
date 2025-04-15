@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Routes, Route, useLocation } from "react-router-dom"
 import Sidebar from "./components/Sidebar"
@@ -8,6 +6,7 @@ import StatusBar from "./components/StatusBar"
 import Home from "./pages/Home"
 import About from "./pages/About"
 import Contact from "./pages/Contact"
+import Projects from "./pages/Projects"
 
 
 function App() {
@@ -35,6 +34,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/projects" element={<Projects />} />
           </Routes>
         </div>
 
